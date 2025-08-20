@@ -10,7 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { SupportDialog } from "@/components/ui/support-dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { AccountSwitcher } from "@/components/auth/AccountSwitcher";
+import { LocalAccountSwitcher } from "@/components/accounts/LocalAccountSwitcher";
+import { LocalAccountsProvider } from "@/contexts/LocalAccountsContext";
 import { LicenseManager } from "@/utils/licenseManager";
 
 export default function LoginPage() {
@@ -181,7 +182,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center p-4 relative">
+    <LocalAccountsProvider>
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center p-4 relative">
       {/* Theme Toggle */}
       <div className="absolute top-4 left-4 z-10">
         <ThemeToggle />
@@ -331,6 +333,15 @@ export default function LoginPage() {
               </Button>
             </form>
 
+            {/* Account Switcher */}
+            <div className="border-t border-border/50 pt-4">
+              <div className="text-center mb-3">
+                <p className="text-sm text-muted-foreground font-cairo">تبديل الحساب</p>
+              </div>
+              <div className="flex justify-center">
+                <LocalAccountSwitcher />
+              </div>
+            </div>
 
             {/* Register Link */}
             <div className="text-center space-y-2 pt-4">
@@ -384,6 +395,7 @@ export default function LoginPage() {
         open={supportDialogOpen} 
         onOpenChange={setSupportDialogOpen} 
       />
-    </div>
+      </div>
+    </LocalAccountsProvider>
   );
 }
