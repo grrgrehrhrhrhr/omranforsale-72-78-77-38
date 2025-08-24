@@ -233,16 +233,25 @@ export class OfflineStorage {
   /**
    * Fallback save using sessionStorage
    */
-  private fallbackSave(key: string, data: any): boolean {
-    try {
-      sessionStorage.setItem(key, JSON.stringify(data));
-      console.warn(`Saved to sessionStorage as fallback: ${key}`);
-      return true;
-    } catch (error) {
-      console.error(`Fallback save failed for ${key}:`, error);
-      return false;
+private fallbackSave(key: string, data: any): boolean {
+  try {
+    // Avoid attempting to store huge backups in sessionStorage
+    if (key === '__auto_backup__') {
+      const size = typeof data === 'string' ? data.length : JSON.stringify(data).length;
+      if (size > 256 * 1024) { // 256KB limit for session storage
+        console.warn('Skipping sessionStorage fallback for large auto backup');
+        return false;
+      }
     }
+
+    sessionStorage.setItem(key, JSON.stringify(data));
+    console.warn(`Saved to sessionStorage as fallback: ${key}`);
+    return true;
+  } catch (error) {
+    console.error(`Fallback save failed for ${key}:`, error);
+    return false;
   }
+}
 
   /**
    * Fallback get using sessionStorage
@@ -312,30 +321,63 @@ export const validateData = (data: any): boolean => {
 
 // Auto-backup functionality محسن
 export const createAutoBackup = (): void => {
-  const backupData = storage.exportData();
-  if (backupData) {
+  try {
+    const backupData = storage.exportData();
+    if (!backupData) return;
+
+    // Skip oversized backups to avoid QuotaExceededError
+    const maxBytes = 512 * 1024; // 512KB safety limit
+    if (backupData.length > maxBytes) {
+      try {
+        // Store a lightweight status instead
+        localStorage.setItem('__auto_backup_status__', JSON.stringify({
+          skipped: true,
+          reason: 'backup_too_large',
+          size: backupData.length,
+          timestamp: new Date().toISOString(),
+        }));
+      } catch {}
+      return; // do not attempt large backup
+    }
+
     storage.setItem('__auto_backup__', {
       data: backupData,
-      created: new Date().toISOString()
+      created: new Date().toISOString(),
     });
+  } catch (err) {
+    // swallow to avoid crashing the app on backup issues
   }
 };
 
 // تحسين Auto-backup للأداء
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', createAutoBackup);
+  window.addEventListener('beforeunload', () => {
+    try {
+      // Only attempt small backups on unload
+      const data = storage.exportData();
+      if (data && data.length <= 256 * 1024) {
+        storage.setItem('__auto_backup__', { data, created: new Date().toISOString() });
+      }
+    } catch {}
+  });
   
-  // إنشاء backup كل 15 دقيقة بدلاً من 5 (لتحسين الأداء)
-  // وفقط إذا كان هناك تغييرات
+  // إنشاء backup كل 60 دقيقة وبشرط قيود الحجم والمساحة
   let lastBackupHash = '';
   setInterval(() => {
-    const currentData = storage.exportData();
-    // استخدام طريقة آمنة للتشفير تدعم Unicode
-    const currentHash = btoa(encodeURIComponent(currentData)).slice(0, 100); // hash مختصر
-    
-    if (currentHash !== lastBackupHash) {
-      createAutoBackup();
-      lastBackupHash = currentHash;
+    try {
+      const usage = storage.getStorageUsage();
+      if (usage.usedPercentage > 85) return; // avoid when nearly full
+
+      const currentData = storage.exportData();
+      if (!currentData || currentData.length > 512 * 1024) return; // skip large
+
+      const currentHash = btoa(unescape(encodeURIComponent(currentData))).slice(0, 100);
+      if (currentHash !== lastBackupHash) {
+        storage.setItem('__auto_backup__', { data: currentData, created: new Date().toISOString() });
+        lastBackupHash = currentHash;
+      }
+    } catch {
+      // ignore
     }
-  }, 15 * 60 * 1000); // كل 15 دقيقة
+  }, 60 * 60 * 1000); // كل 60 دقيقة
 }
