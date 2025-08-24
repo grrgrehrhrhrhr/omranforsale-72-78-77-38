@@ -22,6 +22,9 @@ import { PWAInstaller } from "@/components/ui/pwa-installer";
 import { ElectronStatus } from "@/components/ui/electron-status";
 // Removed OptimizedApp to fix React context issues
 
+// Initialize chunk load error handler
+import "@/utils/chunkLoadErrorHandler";
+
 // الصفحات الأساسية (بدون lazy loading لتجنب مشاكل الهوك)
 import Index from "./pages/Index";
 import Login from "./pages/Login";

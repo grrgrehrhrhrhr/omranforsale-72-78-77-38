@@ -45,15 +45,22 @@ export class OfflineStorage {
       const item = localStorage.getItem(key);
       if (!item) return defaultValue;
 
-      const parsed = JSON.parse(item);
-      
-      // Handle old format (direct data)
-      if (!parsed.timestamp) {
+      // Try to parse as JSON first
+      try {
+        const parsed = JSON.parse(item);
+        
+        // Handle new format (with metadata)
+        if (parsed && typeof parsed === 'object' && parsed.timestamp) {
+          return parsed.data as T;
+        }
+        
+        // Handle old format (direct data as JSON)
         return parsed as T;
+      } catch (parseError) {
+        // If JSON parsing fails, return the raw string value
+        // This handles cases where strings are stored directly without JSON encoding
+        return item as T;
       }
-      
-      // Handle new format (with metadata)
-      return parsed.data as T;
     } catch (error) {
       console.error(`Error reading from localStorage (${key}):`, error);
       return this.fallbackGet(key, defaultValue);
@@ -108,7 +115,13 @@ export class OfflineStorage {
       const allData: Record<string, any> = {};
       
       for (const key of this.getAllKeys()) {
-        allData[key] = this.getItem(key);
+        try {
+          allData[key] = this.getItem(key);
+        } catch (error) {
+          console.warn(`Skipping corrupted key ${key}:`, error);
+          // Skip corrupted keys instead of failing completely
+          continue;
+        }
       }
       
       return allData;
@@ -237,7 +250,14 @@ export class OfflineStorage {
   private fallbackGet<T>(key: string, defaultValue: T | null): T | null {
     try {
       const item = sessionStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultValue;
+      if (!item) return defaultValue;
+      
+      try {
+        return JSON.parse(item);
+      } catch (parseError) {
+        // Return raw string if JSON parsing fails
+        return item as T;
+      }
     } catch (error) {
       console.error(`Fallback get failed for ${key}:`, error);
       return defaultValue;

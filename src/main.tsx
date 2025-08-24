@@ -7,6 +7,7 @@ import { initializePerformanceEnhancements } from './utils/performanceEnhancer'
 import { initializeAdvancedOptimizations } from './utils/advancedOptimizer'
 import { initializeImageOptimization } from './utils/imageOptimizer'
 import './utils/errorMonitoring'
+import './utils/storageCleanup'
 
 // تهيئة واحدة فقط لتجنب الرعشة
 let isInitialized = false;

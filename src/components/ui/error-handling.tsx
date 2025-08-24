@@ -61,17 +61,48 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 function DefaultErrorFallback({ error, retry }: { error: Error; retry: () => void }) {
   const isDevelopment = process.env.NODE_ENV === 'development';
   const [countdown, setCountdown] = useState(5);
+  const [userCancelled, setUserCancelled] = useState(false);
 
   console.error('Error caught by ErrorBoundary:', error);
 
+  // Check if it's a dynamic import error
+  const isDynamicImportError = error.message.includes('Failed to fetch dynamically imported module') ||
+                               error.message.includes('Loading chunk') ||
+                               error.message.includes('Loading CSS chunk');
+
   useEffect(() => {
-    if (countdown > 0) {
+    if (countdown > 0 && !userCancelled) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
+    } else if (countdown === 0 && !userCancelled) {
+      window.location.reload();
+    }
+  }, [countdown, userCancelled]);
+
+  const handleCancelAutoReload = () => {
+    setUserCancelled(true);
+  };
+
+  const handleClearCacheAndReload = () => {
+    // Clear various caches before reloading
+    if ('caches' in window && window.caches) {
+      window.caches.keys().then((names: string[]) => {
+        Promise.all(names.map((name: string) => window.caches.delete(name)))
+          .then(() => {
+            window.location.reload();
+          })
+          .catch(() => {
+            // If cache clearing fails, just reload
+            window.location.reload();
+          });
+      }).catch(() => {
+        // If cache clearing fails, just reload
+        window.location.reload();
+      });
     } else {
       window.location.reload();
     }
-  }, [countdown]);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -80,7 +111,14 @@ function DefaultErrorFallback({ error, retry }: { error: Error; retry: () => voi
           <XCircle className="h-4 w-4" />
           <AlertTitle>حدث خطأ غير متوقع</AlertTitle>
           <AlertDescription>
-            نعتذر، حدث خطأ في التطبيق. سيتم تحديث الصفحة تلقائياً خلال {countdown} ثانية.
+            {isDynamicImportError ? (
+              <>نعتذر، فشل في تحميل جزء من التطبيق. قد يكون هذا بسبب مشكلة في الشبكة أو تحديث التطبيق.</>
+            ) : (
+              <>نعتذر، حدث خطأ في التطبيق.</>
+            )}
+            {!userCancelled && countdown > 0 && (
+              <> سيتم تحديث الصفحة تلقائياً خلال {countdown} ثانية.</>
+            )}
           </AlertDescription>
         </Alert>
 
@@ -102,16 +140,37 @@ function DefaultErrorFallback({ error, retry }: { error: Error; retry: () => voi
           </Alert>
         )}
 
-        <div className="flex gap-2 justify-center">
-          <Button onClick={retry} variant="default">
-            إعادة المحاولة
-          </Button>
-          <Button 
-            onClick={() => window.location.reload()} 
-            variant="outline"
-          >
-            إعادة تحميل الصفحة الآن
-          </Button>
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2 justify-center">
+            <Button onClick={retry} variant="default">
+              إعادة المحاولة
+            </Button>
+            {isDynamicImportError ? (
+              <Button 
+                onClick={handleClearCacheAndReload} 
+                variant="outline"
+              >
+                مسح الذاكرة المؤقتة وإعادة التحميل
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline"
+              >
+                إعادة تحميل الصفحة
+              </Button>
+            )}
+          </div>
+          {!userCancelled && countdown > 0 && (
+            <Button 
+              onClick={handleCancelAutoReload} 
+              variant="ghost" 
+              size="sm"
+              className="text-xs"
+            >
+              إلغاء إعادة التحميل التلقائي
+            </Button>
+          )}
         </div>
       </div>
     </div>
