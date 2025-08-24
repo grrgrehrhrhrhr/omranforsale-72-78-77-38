@@ -59,7 +59,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
  * واجهة خطأ افتراضية محسنة
  */
 function DefaultErrorFallback({ error, retry }: { error: Error; retry: () => void }) {
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isDevelopment = import.meta.env.MODE === 'development';
   const [countdown, setCountdown] = useState(5);
   const [userCancelled, setUserCancelled] = useState(false);
 

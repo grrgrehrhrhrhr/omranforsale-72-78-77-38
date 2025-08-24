@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { SupportDialog } from "@/components/ui/support-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { LocalAccountSwitcher } from "@/components/accounts/LocalAccountSwitcher";
-import { LocalAccountsProvider } from "@/contexts/LocalAccountsContext";
+
 import { LicenseManager } from "@/utils/licenseManager";
 
 export default function LoginPage() {
@@ -181,9 +181,8 @@ export default function LoginPage() {
     }
   };
 
-  return (
-    <LocalAccountsProvider>
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center p-4 relative">
+return (
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center p-4 relative">
       {/* Theme Toggle */}
       <div className="absolute top-4 left-4 z-10">
         <ThemeToggle />
@@ -395,7 +394,6 @@ export default function LoginPage() {
         open={supportDialogOpen} 
         onOpenChange={setSupportDialogOpen} 
       />
-      </div>
-    </LocalAccountsProvider>
+    </div>
   );
 }

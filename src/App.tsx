@@ -65,6 +65,8 @@ const SystemIntegration = lazy(() => import("./pages/SystemIntegration"));
 const SecureInventoryDashboard = lazy(() => import("./components/inventory/SecureInventoryDashboard"));
 const ProductDisplay = lazy(() => import("./pages/ProductDisplay"));
 const SystemHealth = lazy(() => import("./pages/SystemHealth"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // تحميل مسبق محسن ومتدرج للصفحات المهمة
 setTimeout(() => {
@@ -117,16 +119,16 @@ function App() {
                        <Routes>
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
-                         <Route path="/forgot-password" element={
-                           <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                             {React.createElement(lazy(() => import('./pages/ForgotPassword')))}
-                           </Suspense>
-                         } />
-                         <Route path="/reset-password" element={
-                           <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                             {React.createElement(lazy(() => import('./pages/ResetPassword')))}
-                           </Suspense>
-                         } />
+<Route path="/forgot-password" element={
+  <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
+    <ForgotPassword />
+  </Suspense>
+} />
+<Route path="/reset-password" element={
+  <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
+    <ResetPassword />
+  </Suspense>
+} />
                         <Route path="/" element={
                           <ProtectedRoute>
                             <Index />
