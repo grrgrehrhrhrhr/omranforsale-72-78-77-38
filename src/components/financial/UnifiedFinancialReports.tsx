@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -24,7 +24,7 @@ export function UnifiedFinancialReports() {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<any>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     generateUnifiedReport();
   }, []);
 

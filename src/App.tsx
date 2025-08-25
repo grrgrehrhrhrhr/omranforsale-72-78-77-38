@@ -1,9 +1,9 @@
-import React, { Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CustomerProvider } from "@/contexts/CustomerContext";
 import { InvestorProvider } from "@/contexts/InvestorContext";
 import { ModularAppProvider } from "@/core/ModularAppContext";
@@ -13,14 +13,12 @@ import { LocalAccountsProvider } from "@/contexts/LocalAccountsContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { OfflineIndicator } from "@/components/ui/offline-indicator";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { LazyComponentWrapper } from "@/components/performance/LazyComponentWrapper";
-// Temporarily removed PerformanceMonitor to debug React context issues
 import { ErrorBoundary } from "@/components/ui/error-handling";
 import { SEOManager } from "@/components/SEO/SEOManager";
-import { ChecksReport } from "@/components/reports/ChecksReport";
 import { PWAInstaller } from "@/components/ui/pwa-installer";
 import { ElectronStatus } from "@/components/ui/electron-status";
-// Removed OptimizedApp to fix React context issues
+import { LazyComponentWrapper } from "@/components/performance/LazyComponentWrapper";
+import { ChecksReport } from "@/components/reports/ChecksReport";
 
 // Initialize chunk load error handler
 import "@/utils/chunkLoadErrorHandler";
@@ -58,7 +56,6 @@ const Documentation = lazy(() => import("./pages/Documentation"));
 const LicenseManagement = lazy(() => import("./pages/LicenseManagement"));
 const Help = lazy(() => import("./pages/Help"));
 const OfflineManagement = lazy(() => import("./pages/OfflineManagement"));
-
 const MonitoringPage = lazy(() => import("./pages/MonitoringPage"));
 const Returns = lazy(() => import("./pages/Returns"));
 const SystemIntegration = lazy(() => import("./pages/SystemIntegration"));
@@ -89,216 +86,224 @@ const queryClient = new QueryClient({
   },
 });
 
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen bg-background">
+    <div className="flex flex-col items-center gap-4">
+      <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
+      <p className="text-sm text-muted-foreground animate-pulse">جاري التحميل...</p>
+    </div>
+  </div>
+);
+
+const SimpleLoadingFallback = () => (
+  <div className="p-4 flex items-center justify-center">
+    <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
+    <span className="mr-2 text-sm">جاري التحميل...</span>
+  </div>
+);
+
 function App() {
-  console.log('App component rendering...');
-  
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <LocalAccountsProvider>
-            <ModularAppProvider>
-              <AppIntegrationProvider>
-                <CustomerProvider>
-                  <InvestorProvider>
-                    <Toaster />
-                    <Sonner />
-                  <OfflineIndicator />
-                  {/* PerformanceMonitor removed to debug React context issues */}
-                  <PWAInstaller />
-                  <BrowserRouter>
-                    <SEOManager />
-                    <Suspense fallback={
-                      <div className="flex items-center justify-center min-h-screen bg-background">
-                        <div className="flex flex-col items-center gap-4">
-                          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
-                          <p className="text-sm text-muted-foreground animate-pulse">جاري التحميل...</p>
+        <TooltipProvider>
+          <AuthProvider>
+            <LocalAccountsProvider>
+              <ModularAppProvider>
+                <AppIntegrationProvider>
+                  <CustomerProvider>
+                    <InvestorProvider>
+                      <BrowserRouter>
+                        <SEOManager />
+                        <Toaster />
+                        <Sonner />
+                        <OfflineIndicator />
+                        <PWAInstaller />
+                        
+                        <Suspense fallback={<LoadingFallback />}>
+                          <Routes>
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            <Route path="/forgot-password" element={
+                              <Suspense fallback={<SimpleLoadingFallback />}>
+                                <ForgotPassword />
+                              </Suspense>
+                            } />
+                            <Route path="/reset-password" element={
+                              <Suspense fallback={<SimpleLoadingFallback />}>
+                                <ResetPassword />
+                              </Suspense>
+                            } />
+                            <Route path="/" element={
+                              <ProtectedRoute>
+                                <Index />
+                              </ProtectedRoute>
+                            } />
+                            
+                            {/* Sales routes */}
+                            <Route path="/sales/invoices" element={
+                              <ProtectedRoute>
+                                <AppLayout>
+                                  <Suspense fallback={<SimpleLoadingFallback />}>
+                                    <SalesBundle.Invoices />
+                                  </Suspense>
+                                </AppLayout>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/sales/invoices/new" element={
+                              <ProtectedRoute>
+                                <Suspense fallback={<SimpleLoadingFallback />}>
+                                  <SalesBundle.NewInvoice />
+                                </Suspense>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/sales/customers" element={
+                              <ProtectedRoute>
+                                <AppLayout>
+                                  <Suspense fallback={<SimpleLoadingFallback />}>
+                                    <SalesBundle.Customers />
+                                  </Suspense>
+                                </AppLayout>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/sales/customers/new" element={
+                              <ProtectedRoute>
+                                <Suspense fallback={<SimpleLoadingFallback />}>
+                                  <SalesBundle.NewCustomer />
+                                </Suspense>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/sales/customers/view/:id" element={
+                              <ProtectedRoute>
+                                <AppLayout>
+                                  <Suspense fallback={<SimpleLoadingFallback />}>
+                                    <SalesBundle.ViewCustomer />
+                                  </Suspense>
+                                </AppLayout>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/sales/customers/edit/:id" element={
+                              <ProtectedRoute>
+                                <AppLayout>
+                                  <Suspense fallback={<SimpleLoadingFallback />}>
+                                    <SalesBundle.EditCustomer />
+                                  </Suspense>
+                                </AppLayout>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/sales/dashboard" element={
+                              <ProtectedRoute>
+                                <AppLayout>
+                                  <Suspense fallback={<SimpleLoadingFallback />}>
+                                    <SalesBundle.Dashboard />
+                                  </Suspense>
+                                </AppLayout>
+                              </ProtectedRoute>
+                            } />
+                            
+                            {/* User Management routes */}
+                            <Route path="/users" element={
+                              <ProtectedRoute>
+                                <AppLayout>
+                                  <Suspense fallback={<SimpleLoadingFallback />}>
+                                    <UserManagement />
+                                  </Suspense>
+                                </AppLayout>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/user-sessions" element={
+                              <ProtectedRoute>
+                                <AppLayout>
+                                  <Suspense fallback={<SimpleLoadingFallback />}>
+                                    <UserSessions />
+                                  </Suspense>
+                                </AppLayout>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/sessions" element={
+                              <ProtectedRoute>
+                                <Suspense fallback={<SimpleLoadingFallback />}>
+                                  <Sessions />
+                                </Suspense>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/admin-sessions" element={
+                              <ProtectedRoute>
+                                <Suspense fallback={<SimpleLoadingFallback />}>
+                                  <AdminSessions />
+                                </Suspense>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/activity-log" element={
+                              <ProtectedRoute>
+                                <Suspense fallback={<SimpleLoadingFallback />}>
+                                  <ActivityLog />
+                                </Suspense>
+                              </ProtectedRoute>
+                            } />
+                            
+                            {/* Other routes */}
+                            <Route path="/purchases/invoices" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><PurchasesBundle.Invoices /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/purchases/invoices/new" element={<ProtectedRoute><Suspense fallback={<SimpleLoadingFallback />}><PurchasesBundle.NewPurchase /></Suspense></ProtectedRoute>} />
+                            <Route path="/purchases/suppliers" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><PurchasesBundle.Suppliers /></Suspense></AppLayout></ProtectedRoute>} />
+                            
+                            <Route path="/inventory/products" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><InventoryBundle.Products /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/inventory/products/new" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><InventoryBundle.NewProduct /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/inventory/stock" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><InventoryBundle.Stock /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/inventory/barcode" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><InventoryBundle.Barcode /></Suspense></AppLayout></ProtectedRoute>} />
+                            
+                            <Route path="/cash-register" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><CashRegister /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/expenses" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><Expenses /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/installments" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><Installments /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/currency-converter" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><CurrencyConverter /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/checks" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><Checks /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/returns" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><Returns /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/product-display" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><ProductDisplay /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/payroll" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><EmployeesBundle.Payroll /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/employees" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><EmployeesBundle.List /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/employees/new" element={<ProtectedRoute><Suspense fallback={<SimpleLoadingFallback />}><EmployeesBundle.New /></Suspense></ProtectedRoute>} />
+                            
+                            <Route path="/investors/registration" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><InvestorsBundle.Registration /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/investors/purchases" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><InvestorsBundle.Purchases /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/investors/reports" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><InvestorsBundle.Reports /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/investors/integrated-dashboard" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><InvestorsBundle.Dashboard /></Suspense></AppLayout></ProtectedRoute>} />
+                            
+                            <Route path="/settings" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><Settings /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/documentation" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><Documentation /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/offline-management" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><OfflineManagement /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/license-management" element={<ProtectedRoute><Suspense fallback={<SimpleLoadingFallback />}><LicenseManagement /></Suspense></ProtectedRoute>} />
+                            
+                            <Route path="/monitoring" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><MonitoringPage /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/system-health" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><SystemHealth /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/system-integration" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><SystemIntegration /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/secure-inventory" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><SecureInventoryDashboard /></Suspense></AppLayout></ProtectedRoute>} />
+                            
+                            <Route path="/reports/profit" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><ReportsBundle.Profit /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/reports/sales" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><ReportsBundle.Sales /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/reports/purchases" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><ReportsBundle.Purchases /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/reports/inventory" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><ReportsBundle.Inventory /></Suspense></AppLayout></ProtectedRoute>} />
+                            <Route path="/reports/checks" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><LazyComponentWrapper><ChecksReport /></LazyComponentWrapper></Suspense></AppLayout></ProtectedRoute>} />
+                            
+                            <Route path="/help" element={<ProtectedRoute><AppLayout><Suspense fallback={<SimpleLoadingFallback />}><Help /></Suspense></AppLayout></ProtectedRoute>} />
+                            
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </Suspense>
+                        
+                        {/* مؤشرات الحالة */}
+                        <div className="fixed top-4 left-4 z-50">
+                          <ElectronStatus />
                         </div>
-                      </div>
-                    }>
-                       <Routes>
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-<Route path="/forgot-password" element={
-  <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-    <ForgotPassword />
-  </Suspense>
-} />
-<Route path="/reset-password" element={
-  <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-    <ResetPassword />
-  </Suspense>
-} />
-                        <Route path="/" element={
-                          <ProtectedRoute>
-                            <Index />
-                          </ProtectedRoute>
-                        } />
-                        
-                        {/* Sales routes with Suspense */}
-                        <Route path="/sales/invoices" element={
-                          <ProtectedRoute>
-                            <AppLayout>
-                              <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                                <SalesBundle.Invoices />
-                              </Suspense>
-                            </AppLayout>
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/sales/invoices/new" element={
-                          <ProtectedRoute>
-                            <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                              <SalesBundle.NewInvoice />
-                            </Suspense>
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/sales/customers" element={
-                          <ProtectedRoute>
-                            <AppLayout>
-                              <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                                <SalesBundle.Customers />
-                              </Suspense>
-                            </AppLayout>
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/sales/customers/new" element={
-                          <ProtectedRoute>
-                            <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                              <SalesBundle.NewCustomer />
-                            </Suspense>
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/sales/customers/view/:id" element={
-                          <ProtectedRoute>
-                            <AppLayout>
-                              <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                                <SalesBundle.ViewCustomer />
-                              </Suspense>
-                            </AppLayout>
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/sales/customers/edit/:id" element={
-                          <ProtectedRoute>
-                            <AppLayout>
-                              <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                                <SalesBundle.EditCustomer />
-                              </Suspense>
-                            </AppLayout>
-                          </ProtectedRoute>
-                        } />
-                        
-                        {/* Users route with Suspense */}
-                        <Route path="/users" element={
-                          <ProtectedRoute>
-                            <AppLayout>
-                              <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                                <UserManagement />
-                              </Suspense>
-                            </AppLayout>
-                          </ProtectedRoute>
-                        } />
-                        
-                        {/* User Sessions route */}
-                        <Route path="/user-sessions" element={
-                          <ProtectedRoute>
-                            <AppLayout>
-                              <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                                <UserSessions />
-                              </Suspense>
-                            </AppLayout>
-                          </ProtectedRoute>
-                        } />
-
-                        {/* Sessions Management */}
-                        <Route path="/sessions" element={
-                          <ProtectedRoute>
-                            <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                              <Sessions />
-                            </Suspense>
-                          </ProtectedRoute>
-                        } />
-
-                        {/* Admin Sessions */}
-                        <Route path="/admin-sessions" element={
-                          <ProtectedRoute>
-                            <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                              <AdminSessions />
-                            </Suspense>
-                          </ProtectedRoute>
-                        } />
-
-                        {/* Activity Log */}
-                        <Route path="/activity-log" element={
-                          <ProtectedRoute>
-                            <Suspense fallback={<div className="p-4">جاري التحميل...</div>}>
-                              <ActivityLog />
-                            </Suspense>
-                          </ProtectedRoute>
-                        } />
-                        
-                        {/* Other routes wrapped in Suspense */}
-                        <Route path="/purchases/invoices" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><PurchasesBundle.Invoices /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/purchases/invoices/new" element={<ProtectedRoute><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><PurchasesBundle.NewPurchase /></Suspense></ProtectedRoute>} />
-                         <Route path="/purchases/suppliers" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><PurchasesBundle.Suppliers /></Suspense></AppLayout></ProtectedRoute>} />
-                        
-                        <Route path="/inventory/products" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><InventoryBundle.Products /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/inventory/products/new" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><InventoryBundle.NewProduct /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/inventory/stock" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><InventoryBundle.Stock /></Suspense></AppLayout></ProtectedRoute>} />
-                         <Route path="/inventory/barcode" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><InventoryBundle.Barcode /></Suspense></AppLayout></ProtectedRoute>} />
-                        
-                        <Route path="/cash-register" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><CashRegister /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/expenses" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><Expenses /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/installments" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><Installments /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/currency-converter" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><CurrencyConverter /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/checks" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><Checks /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/returns" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><Returns /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/product-display" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><ProductDisplay /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/payroll" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><EmployeesBundle.Payroll /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/employees" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><EmployeesBundle.List /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/employees/new" element={<ProtectedRoute><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><EmployeesBundle.New /></Suspense></ProtectedRoute>} />
-                        
-                        <Route path="/investors/registration" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><InvestorsBundle.Registration /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/investors/purchases" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><InvestorsBundle.Purchases /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/investors/reports" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><InvestorsBundle.Reports /></Suspense></AppLayout></ProtectedRoute>} />
-                        <Route path="/investors/integrated-dashboard" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><InvestorsBundle.Dashboard /></Suspense></AppLayout></ProtectedRoute>} />
-                        
-                        <Route path="/settings" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><Settings /></Suspense></AppLayout></ProtectedRoute>} />
-                         <Route path="/documentation" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><Documentation /></Suspense></AppLayout></ProtectedRoute>} />
-                         <Route path="/offline-management" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><OfflineManagement /></Suspense></AppLayout></ProtectedRoute>} />
-                         <Route path="/license-management" element={<ProtectedRoute><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><LicenseManagement /></Suspense></ProtectedRoute>} />
-                        
-                         <Route path="/monitoring" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><MonitoringPage /></Suspense></AppLayout></ProtectedRoute>} />
-                         <Route path="/system-health" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><SystemHealth /></Suspense></AppLayout></ProtectedRoute>} />
-                         <Route path="/system-integration" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><SystemIntegration /></Suspense></AppLayout></ProtectedRoute>} />
-                         <Route path="/secure-inventory" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><SecureInventoryDashboard /></Suspense></AppLayout></ProtectedRoute>} />
-                        
-                         <Route path="/reports/profit" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><ReportsBundle.Profit /></Suspense></AppLayout></ProtectedRoute>} />
-                         <Route path="/reports/sales" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><ReportsBundle.Sales /></Suspense></AppLayout></ProtectedRoute>} />
-                         <Route path="/reports/purchases" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><ReportsBundle.Purchases /></Suspense></AppLayout></ProtectedRoute>} />
-                         <Route path="/reports/inventory" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><ReportsBundle.Inventory /></Suspense></AppLayout></ProtectedRoute>} />
-                         <Route path="/reports/checks" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><LazyComponentWrapper><ChecksReport /></LazyComponentWrapper></Suspense></AppLayout></ProtectedRoute>} />
-                        
-                         <Route path="/sales/dashboard" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><SalesBundle.Dashboard /></Suspense></AppLayout></ProtectedRoute>} />
-                         <Route path="/help" element={<ProtectedRoute><AppLayout><Suspense fallback={<div className="p-4">جاري التحميل...</div>}><Help /></Suspense></AppLayout></ProtectedRoute>} />
-                         
-                         <Route path="*" element={<NotFound />} />
-                    </Routes>
-                    </Suspense>
-                  </BrowserRouter>
-                </InvestorProvider>
-              </CustomerProvider>
-            </AppIntegrationProvider>
-          </ModularAppProvider>
-        </LocalAccountsProvider>
-      </AuthProvider>
-      
-      {/* مؤشرات الأوف لاين و PWA */}
-      <div className="fixed top-4 left-4 z-50">
-        <ElectronStatus />
-      </div>
-      
-    </QueryClientProvider>
-  </ErrorBoundary>
+                      </BrowserRouter>
+                    </InvestorProvider>
+                  </CustomerProvider>
+                </AppIntegrationProvider>
+              </ModularAppProvider>
+            </LocalAccountsProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -2,7 +2,7 @@
  * مكون عرض حالة النسخ الاحتياطية في لوحة التحكم
  */
 
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,16 +25,18 @@ import { useToast } from '@/hooks/use-toast';
 export function BackupStatus() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [systemInfo, setSystemInfo] = React.useState({
+  const [systemInfo, setSystemInfo] = useState({
     totalBackups: 0,
+    lastBackup: null,
+    backupHealth: 'جيد',
+    nextScheduled: null,
     totalSize: 0,
-    lastBackup: undefined as string | undefined,
     scheduledBackups: false
   });
-  const [recentBackups, setRecentBackups] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(false);
+  const [recentBackups, setRecentBackups] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadSystemInfo();
     loadRecentBackups();
   }, []);
@@ -42,8 +44,12 @@ export function BackupStatus() {
   const loadSystemInfo = () => {
     const info = backupManager.getBackupSystemInfo();
     setSystemInfo({
-      ...info,
-      lastBackup: info.lastBackup || undefined
+      totalBackups: info.totalBackups || 0,
+      lastBackup: info.lastBackup || null,
+      backupHealth: 'جيد',
+      nextScheduled: null,
+      totalSize: info.totalSize || 0,
+      scheduledBackups: info.scheduledBackups || false
     });
   };
 

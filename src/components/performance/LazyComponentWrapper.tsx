@@ -1,8 +1,8 @@
-import React, { Suspense, ComponentType } from 'react';
+import { Suspense, ComponentType, useState, useEffect, lazy, ReactNode } from 'react';
 
 interface LazyComponentWrapperProps {
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
+  children: ReactNode;
+  fallback?: ReactNode;
   minLoadingTime?: number;
 }
 
@@ -38,12 +38,12 @@ function DelayedFallback({
   children, 
   delay 
 }: { 
-  children: React.ReactNode; 
+  children: ReactNode; 
   delay: number; 
 }) {
-  const [show, setShow] = React.useState(false);
+  const [show, setShow] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setTimeout(() => setShow(true), delay);
     return () => clearTimeout(timer);
   }, [delay]);
@@ -56,9 +56,9 @@ function DelayedFallback({
  */
 export function withLazyLoading<P extends Record<string, any>>(
   Component: ComponentType<P>,
-  fallback?: React.ReactNode
+  fallback?: ReactNode
 ) {
-  const LazyComponent = React.lazy(() => Promise.resolve({ default: Component }));
+  const LazyComponent = lazy(() => Promise.resolve({ default: Component }));
   
   return function WrappedComponent(props: P) {
     return (

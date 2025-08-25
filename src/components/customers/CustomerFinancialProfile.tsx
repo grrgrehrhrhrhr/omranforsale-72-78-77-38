@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,10 +11,10 @@ interface CustomerFinancialProfileProps {
 }
 
 export function CustomerFinancialProfile({ customerId }: CustomerFinancialProfileProps) {
-  const [customerReport, setCustomerReport] = React.useState<any>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [customerReport, setCustomerReport] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchCustomerData = () => {
       try {
         const report = customerIntegrationManager.getCustomerDetailedReport(customerId);

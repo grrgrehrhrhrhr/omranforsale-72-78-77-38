@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface FastLoaderProps {
@@ -128,9 +128,9 @@ export function withFastLoading<P extends Record<string, any>>(
   loaderType: 'page' | 'card' | 'list' | 'form' = 'page'
 ) {
   return function FastLoadingComponent(props: P) {
-    const [isLoading, setIsLoading] = React.useState(true);
+    const [isLoading, setIsLoading] = useState(true);
     
-    React.useEffect(() => {
+    useEffect(() => {
       // تحميل فوري للمكونات البسيطة
       const timer = setTimeout(() => setIsLoading(false), 10);
       return () => clearTimeout(timer);
